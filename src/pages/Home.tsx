@@ -20,6 +20,8 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+const BACKEND_URL = "https://accredian-backend-task-r19w.onrender.com";
+
 export default function Component() {
   const [input, setInput] = useState<inputTypes>({
     name: "",
@@ -36,10 +38,7 @@ export default function Component() {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/referrals",
-        input
-      );
+      const response = await axios.post(`${BACKEND_URL}/api/referrals`, input);
 
       console.log("Success:", response.data);
 
