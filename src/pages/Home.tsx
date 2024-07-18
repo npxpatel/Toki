@@ -1,197 +1,150 @@
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
-import Header from "./Header";
-import Footer from "./Footer";
-import Testimonials from "./Testimonials";
-import { useState } from "react";
-import axios from "axios";
-import { GiftIcon, RocketIcon, UsersIcon } from "./Icons";
-import landingImage from "../assets/imageTop.jpg";
-
-interface inputTypes {
-  name: string;
-  email: string;
-  refferedName: string;
-  refferedEmail: string;
-}
-
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-const BACKEND_URL = "https://accredian-backend-task-r19w.onrender.com";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import CryptoJS from 'crypto-js';
 
 export default function Component() {
-  const [input, setInput] = useState<inputTypes>({
-    name: "",
-    email: "",
-    refferedName: "",
-    refferedEmail: "",
-  });
+  const [result, setResult] = useState<string>('');
+  
+  const encryptionKey = 'FtmJ7frzTyWOzintybbqIWzwwclcPtaI';
+  const accessToken = '0e186445-0647-417c-ae27-8098533f1914';
+  const campaignID = '6a0fa162-fb4c-4074-a6d4-402744e3590b';
 
-  async function onSubmit(e: any) {
-    e.preventDefault();
-    if (!isValidEmail(input.email) || !isValidEmail(input.refferedEmail)) {
-      alert("Please enter valid email addresses.");
-      return;
+  useEffect(() => {
+    // Agar script ko API se fetch karna ho to yahan se fetch kar sakte hain
+    const scriptContent = ''; // Set the AFScript content from your API response here
+    if (scriptContent) {
+      const script = document.createElement("script");
+      script.type = "text/javascript";
+      script.innerHTML = scriptContent;
+      document.getElementsByTagName('head')[0].appendChild(script);
     }
+  }, []);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const form = event.target as HTMLFormElement;
+    const phoneNumber = form.phone.value;
+
+    const transactionID = 'unique_transaction_id'; 
+
+    const data = {
+      DeviceInfo: {
+        PackageName: 'com.test.com',
+        LangCode: 'en',
+        DeviceID: 'test_dev_doc'
+      },
+      Referrer: {
+        Affiliate: {
+          Campaign: campaignID,
+          Country: 'IQ',
+          firstPageButtonID: 'msisdn-entry',
+          secondPageButtonID: 'pin-entry'
+        }
+      },
+      Request: {
+        Action: 1,
+        TransactionID: transactionID,
+        SessionID: '',
+        MSISDN: '+964' + phoneNumber,
+        PinCode: ''
+      }
+    };
+
+    const encrypt = (data: string, key: string): string => {
+      const iv = key.substring(0, 16);
+      const encrypted = CryptoJS.AES.encrypt(data, CryptoJS.enc.Utf8.parse(key), {
+        iv: CryptoJS.enc.Utf8.parse(iv),
+        padding: CryptoJS.pad.Pkcs7,
+        mode: CryptoJS.mode.CBC
+      });
+      return encrypted.toString();
+    };
+
+    const decrypt = (data: string, key: string): string => {
+      const iv = key.substring(0, 16);
+      const decrypted = CryptoJS.AES.decrypt(data, CryptoJS.enc.Utf8.parse(key), {
+        iv: CryptoJS.enc.Utf8.parse(iv),
+        padding: CryptoJS.pad.Pkcs7,
+        mode: CryptoJS.mode.CBC
+      });
+      return decrypted.toString(CryptoJS.enc.Utf8);
+    };
+
+   
+    const encryptedData = encrypt(JSON.stringify(data), encryptionKey);
 
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/referrals`, input);
-
-      console.log("Success:", response.data);
-
-      setInput({
-        name: "",
-        email: "",
-        refferedEmail: "",
-        refferedName: "",
+      const response = await fetch('https://d3398n96t5wqx9.cloudfront.net/UsersAquisition/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ data: encryptedData })
       });
 
-      alert("Referral submitted successfully!");
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to submit referral. Please try again later.");
+      const responseData = await response.json();
+      const decryptedData = decrypt(responseData.data, encryptionKey);
+
+      setResult(JSON.stringify(decryptedData, null, 2)); 
+    } catch (error : any) {
+      setResult(`Error: ${error.message}`); 
     }
-  }
+  };
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-background">
-      <Header />
-
-      <main className="flex-1">
-        <section className="bg-blue-500 from-primary to-primary-foreground py-12 md:py-24 lg:py-32">
-          <div className="container flex flex-col items-center gap-6 px-4 md:px-6 lg:flex-row lg:gap-12">
-            <div className="max-w-xl space-y-4 text-center lg:text-left">
-              <h1 className="text-3xl font-bold tracking-tighter text-primary-foreground sm:text-4xl md:text-5xl lg:text-6xl">
-                Refer Your Friends, Earn Rewards
-              </h1>
-              <p className="text-lg text-primary-foreground/80 md:text-xl">
-                Invite your friends to our courses and earn exciting rewards
-                when they sign up.
-              </p>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    className="w-full max-w-[200px] md:w-auto bg-primary-foreground text-primary hover:bg-primary hover:text-primary-foreground"
-                  >
-                    Refer Now
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <GiftIcon className="size-12 text-primary" />
-                    <h3 className=" text-xl font-medium">Refer Your Friends</h3>
-                    <p className="text-muted-foreground  ">
-                      Enter your friend's details to refer them for our courses
-                      and earn rewards.
-                    </p>
-                    <form className="w-full space-y-4" onSubmit={onSubmit}>
-                      <Input
-                        type="text"
-                        placeholder="Your Name"
-                        className="w-full"
-                        onChange={(e) =>
-                          setInput({ ...input, name: e.target.value })
-                        }
-                      />
-                      <Input
-                        type="email"
-                        placeholder="Your Email"
-                        className="w-full"
-                        onChange={(e) =>
-                          setInput({ ...input, email: e.target.value })
-                        }
-                      />
-                      <Input
-                        type="text"
-                        placeholder="Friend's Name"
-                        className="w-full"
-                        onChange={(e) =>
-                          setInput({ ...input, refferedName: e.target.value })
-                        }
-                      />
-                      <Input
-                        type="email"
-                        placeholder="Friend's Email"
-                        className="w-full"
-                        onChange={(e) =>
-                          setInput({ ...input, refferedEmail: e.target.value })
-                        }
-                      />
-                      <Button
-                        type="submit"
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-                      >
-                        Refer Now
-                      </Button>
-                    </form>
-                  </div>
-                </DialogContent>
-              </Dialog>
+    <div className="flex flex-col min-h-screen">
+      <header className="bg-primary py-8 px-4 md:px-6">
+        <div className="container mx-auto max-w-3xl text-center">
+          <h1 className="text-3xl font-bold text-primary-foreground">Get in Touch</h1>
+          <p className="mt-2 text-muted-foreground">Reach out to us for more information.</p>
+        </div>
+      </header>
+      <main className="flex-1 py-12 px-4 md:px-6">
+        <div className="container mx-auto max-w-3xl">
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
+              <label htmlFor="country-code" className="text-right font-medium">
+                Country
+              </label>
+              <Input id="country-code" type="tel" defaultValue="+964" className="max-w-[80px]" readOnly />
             </div>
-            <img
-              src={landingImage}
-              width="600"
-              height="400"
-              alt="Refer & Earn"
-              className="rounded-xl object-cover"
-            />
-          </div>
-        </section>
-        <section className="py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
-            <div className="mx-auto max-w-3xl space-y-6 text-center">
-              <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm text-primary">
-                Refer & Earn
-              </div>
-              <h2 className="text-3xl font-bold tracking-tighter text-primary sm:text-4xl md:text-5xl">
-                Why Join Our Referral Program?
-              </h2>
-              <p className="text-muted-foreground md:text-xl">
-                Discover the benefits of our referral program and start earning
-                rewards today.
-              </p>
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
+              <label htmlFor="phone" className="text-right font-medium">
+                Phone
+              </label>
+              <Input id="phone" name="phone" type="tel" placeholder="123 456 7890" required />
             </div>
-            <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-lg bg-card p-6 shadow-sm transition-all hover:scale-105">
-                <GiftIcon className="mb-4 h-8 w-8 text-primary" />
-                <h3 className="text-lg font-medium text-primary">
-                  Earn Rewards
-                </h3>
-                <p className="text-muted-foreground">
-                  Receive exciting rewards when your friends sign up for our
-                  courses.
-                </p>
-              </div>
-              <div className="rounded-lg bg-card p-6 shadow-sm transition-all hover:scale-105">
-                <UsersIcon className="mb-4 h-8 w-8 text-primary" />
-                <h3 className="text-lg font-medium text-primary">
-                  Expand Your Network
-                </h3>
-                <p className="text-muted-foreground">
-                  Connect with like-minded individuals and grow your
-                  professional network.
-                </p>
-              </div>
-              <div className="rounded-lg bg-card p-6 shadow-sm transition-all hover:scale-105">
-                <RocketIcon className="mb-4 h-8 w-8 text-primary" />
-                <h3 className="text-lg font-medium text-primary">
-                  Accelerate Your Learning
-                </h3>
-                <p className="text-muted-foreground">
-                  Encourage your friends to join and learn together for a more
-                  rewarding experience.
-                </p>
-              </div>
+            <div className="flex justify-end">
+              <Button type="submit">Submit</Button>
+            </div>
+          </form>
+          <div className="mt-8 space-y-4">
+            <h2 className="text-2xl font-bold">Response</h2>
+            <div className="rounded-lg border bg-background p-4 text-muted-foreground">
+              <pre>
+                {result}
+              </pre>
             </div>
           </div>
-        </section>
-        <Testimonials />
+        </div>
       </main>
-      <Footer />
+      <footer className="bg-muted py-4 px-4 md:px-6">
+        <div className="container mx-auto max-w-3xl flex flex-col items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex gap-4">
+            <Link to="#" className="hover:underline">
+              Privacy Policy
+            </Link>
+            <Link to="#" className="hover:underline">
+              Terms &amp; Conditions
+            </Link>
+          </div>
+          <p>&copy; 2024 Your Company. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }
